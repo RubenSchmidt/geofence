@@ -17,13 +17,14 @@ function createMap (req, res) {
 
 function pointsToLatLonInts(req, res){
   var points = req.body.features[0].geometry.coordinates[0];
-  const intArray = new Uint32Array((points.length-1)*2);
-  var pos = 0;
+  const intArray = new Uint32Array((points.length-1)*2 + 1); //remove last point as it is same as first for a polygon. add 1 as first item in the array should be the
+  intArray[0] = points.length-1; //first int in stream will tell how many points are in the stream
+  var pos = 1;
   for(var i=0; i<points.length-1; i++){
     var latAsInt = parseInt(points[i][0] * Math.pow(10, 6));
     var lonAsInt = parseInt(points[i][1] * Math.pow(10, 6));
-    intArray[pos] = latAsInt;
-    intArray[pos+1] = lonAsInt;
+    intArray[pos+1] = latAsInt;
+    intArray[pos+2] = lonAsInt;
     pos+=2;
   }
   console.log('--intarray--');
