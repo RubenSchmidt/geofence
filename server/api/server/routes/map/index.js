@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 var fs = require('fs');
+var path = require('path');
+var serverConfig = require('../../config/server.config');
 
 module.exports = function () {
     router.post(
@@ -11,7 +13,7 @@ module.exports = function () {
 };
 
 function createMap (req, res) {
-  req.body = JSON.parse(req.body);
+  //req.body = JSON.parse(req.body);
   var points = pointsToLatLonInts(req, res);
 }
 
@@ -19,7 +21,7 @@ function pointsToLatLonInts(req, res){
   var points = req.body.features[0].geometry.coordinates[0];
   const intArray = new Uint32Array((points.length-1)*2 + 1); //remove last point as it is same as first for a polygon. add 1 as first item in the array should be the
   intArray[0] = points.length-1; //first int in stream will tell how many points are in the stream
-  var pos = 1;
+  var pos = 0;
   for(var i=0; i<points.length-1; i++){
     var latAsInt = parseInt(points[i][0] * Math.pow(10, 6));
     var lonAsInt = parseInt(points[i][1] * Math.pow(10, 6));
@@ -27,16 +29,18 @@ function pointsToLatLonInts(req, res){
     intArray[pos+2] = lonAsInt;
     pos+=2;
   }
-  console.log('--intarray--');
-  console.log(intArray.buffer);
+
   var buf = Buffer.from(intArray.buffer, 0, intArray.buffer.length);
-  console.log('--buffer-- size: '+buf.length);
-  console.log(buf);
-  fs.writeFile('binary.orbit', buf, 'binary', function(err){
+
+  var filePath = path.resolve('./public/binary.orbit');
+
+  fs.writeFile(filePath, buf, 'binary', function(err){
     if(err) {
       console.log(err);
     };
   });
+
+  return res.status(200).json({url: serverConfig.ROOT_URL+'public/binary.orbit'});
 
   fs.open('binary.orbit', 'r', function(status, fd){
     var buffer = new Buffer(intArray.length);
