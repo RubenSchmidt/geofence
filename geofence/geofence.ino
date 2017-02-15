@@ -1,10 +1,12 @@
 #include <NMEAGPS.h>
 #include <NeoSWSerial.h>
 
+
 // This sets the default ports to listen for the GPS signal to 3 and 4.
 // It also uses NeoSWSerial instead to do software serial.
 #include "GPSport.h"
 #include "Streamers.h"
+#include "fenceCheck.h"
 
 #define DEBUG_PORT Serial
 
@@ -14,6 +16,11 @@
 #endif
 
 static NMEAGPS gps;
+struct coordinate fence[20];
+struct coordinate pos;
+int points = 4;
+gps_fix fix;
+
 
 //--------------------------
 
@@ -44,27 +51,38 @@ void setup() {
   gps_port.attachInterrupt( GPSisr );
   gps_port.begin( 9600 );
 
+  //Square around Trondheim
+  fence[0].latitude = 628927150;
+  fence[0].longitude = 87863160;
+  fence[1].latitude = 628250560;
+  fence[1].longitude = 117965700;
+  fence[2].latitude = 639132280;
+  fence[2].longitude = 118515010;
+  fence[3].latitude = 639277170;
+  fence[3].longitude = 98519900;
+
 }
 
 void doSomeWork() {
-  gps_fix fix = gps.read();
-    if (fix.valid.location) {
-    Serial.print( fix.latitude() );
-    Serial.print( ',' );
-    Serial.println( fix.longitudeL() );
+    pos.latitude = fix.latitudeL();
+    pos.longitude = fix.longitudeL();
+    int status = insideFence(fence, pos, points);
+    Serial.println(status);
   }
 }
 
 void loop() {
   if (gps.available()) {
-    //doSomeWork();
+    fix = gps.read();
+    if (fix.valid.location) {
+      doSomeWork();
+    }
     // Print all the things!
-    trace_all( DEBUG_PORT, gps, gps.read() );
+    trace_all( DEBUG_PORT, gps, fix );
   }
 
   if (gps.overrun()) {
     gps.overrun( false );
     DEBUG_PORT.println( F("DATA OVERRUN: took too long to use gps.read() data!") );
-
   }
 }
