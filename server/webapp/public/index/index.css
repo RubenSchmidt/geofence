@@ -1,0 +1,30 @@
+#mapid{
+  height: 1200px;
+  z-index: 0;
+}
+
+#save, #delete{
+  position: absolute;
+  top:350px;
+  left:20px;
+  z-index:100;
+  background:white;
+  color:black;
+  padding:6px;
+  border-radius:4px;
+  font-family: 'Helvetica Neue';
+  cursor: pointer;
+  font-size:12px;
+  text-decoration:none;
+}
+#save:hover{
+  background: green;
+  color: white;
+}
+#delete:hover{
+  background: red;
+  color: white;
+}
+#delete{
+  top:380px
+}
