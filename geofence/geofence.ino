@@ -18,34 +18,41 @@
 #endif
 
 static NMEAGPS gps;
+const int applicationModulePort = 8;
+
 struct coordinate fence[20];
 uint32_t points;
 struct coordinate pos;
+
+int numberOfPoints = 4;
+
 gps_fix fix;
 
 //--------------------------
 
 static void GPSisr( uint8_t c )
 {
-  gps.handle( c );
+	gps.handle( c );
 
 } // GPSisr
 
 void setup() {
-  // Start the normal trace output
-  DEBUG_PORT.begin(9600);
-  while (!DEBUG_PORT);
-  DEBUG_PORT.print( F("NMEA_isr.INO: started\n") );
-  DEBUG_PORT.print( F("fix object size = ") );
-  DEBUG_PORT.println( sizeof(gps.fix()) );
-  DEBUG_PORT.print( F("NMEAGPS object size = ") );
-  DEBUG_PORT.println( sizeof(gps) );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  trace_header( DEBUG_PORT );
-  DEBUG_PORT.flush();
-  // Start the UART for the GPS device
-  gps_port.attachInterrupt( GPSisr );
-  gps_port.begin( 9600 );
+	// Start the normal trace output
+	DEBUG_PORT.begin(9600);
+	while (!DEBUG_PORT);
+	DEBUG_PORT.print( F("NMEA_isr.INO: started\n") );
+	DEBUG_PORT.print( F("fix object size = ") );
+	DEBUG_PORT.println( sizeof(gps.fix()) );
+	DEBUG_PORT.print( F("NMEAGPS object size = ") );
+	DEBUG_PORT.println( sizeof(gps) );
+	DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+	trace_header( DEBUG_PORT );
+	DEBUG_PORT.flush();
+
+	pinMode(applicationModulePort, OUTPUT);
+	// Start the UART for the GPS device
+	gps_port.attachInterrupt( GPSisr );
+	gps_port.begin( 9600 );
 
   // Initialise SD card
 	pinMode(10, OUTPUT);
@@ -55,8 +62,8 @@ void setup() {
 		return;
 	}
 
-  // Import fence here
-  // Set number of points here.
+	// Import fence here
+	// Set number of points here.
   auto err = load_fence_from_sd("map", fence, &points);
   if(err != LOAD_FENCE_FROM_SD_OK) {
     DEBUG_PORT.print("Fence load error: ");
@@ -65,25 +72,28 @@ void setup() {
 }
 
 void doSomeWork() {
-    pos.latitude = fix.latitudeL();
-    pos.longitude = fix.longitudeL();
-    int status = insideFence(fence, pos, points);
-    // Broadcast status
-
+	pos.latitude = fix.latitudeL();
+	pos.longitude = fix.longitudeL();
+	int status = insideFence(fence, pos, numberOfPoints);
+	if (status == 1 ) {
+		digitalWrite(applicationModulePort, HIGH);
+	} else {
+		digitalWrite(applicationModulePort, LOW);
+	}		
 }
 
 void loop() {
-  if (gps.available()) {
-    fix = gps.read();
-    if (fix.valid.location) {
-      doSomeWork();
-    }
-    // Print all the things!
-    trace_all( DEBUG_PORT, gps, fix );
-  }
+	if (gps.available()) {
+		fix = gps.read();
+		if (fix.valid.location) {
+			doSomeWork(); 
+		}
+		// Print all the things!
+		trace_all( DEBUG_PORT, gps, fix );
+	}
 
-  if (gps.overrun()) {
-    gps.overrun( false );
-    DEBUG_PORT.println( F("DATA OVERRUN: took too long to use gps.read() data!") );
-  }
+	if (gps.overrun()) {
+		gps.overrun( false );
+		DEBUG_PORT.println( F("DATA OVERRUN: took too long to use gps.read() data!") );
+	}
 }
