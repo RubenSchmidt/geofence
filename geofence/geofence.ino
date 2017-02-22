@@ -23,9 +23,6 @@ const int applicationModulePort = 8;
 struct coordinate fence[20];
 uint32_t points;
 struct coordinate pos;
-
-int numberOfPoints = 4;
-
 gps_fix fix;
 
 //--------------------------
@@ -74,7 +71,7 @@ void setup() {
 void doSomeWork() {
 	pos.latitude = fix.latitudeL();
 	pos.longitude = fix.longitudeL();
-	int status = insideFence(fence, pos, numberOfPoints);
+	int status = insideFence(fence, pos, points);
 	if (status == 1 ) {
 		digitalWrite(applicationModulePort, HIGH);
 	} else {
