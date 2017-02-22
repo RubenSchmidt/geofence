@@ -1,12 +1,14 @@
 #include <NMEAGPS.h>
 #include <NeoSWSerial.h>
 
+#include <SD.h>
 
 // This sets the default ports to listen for the GPS signal to 3 and 4.
 // It also uses NeoSWSerial instead to do software serial.
 #include "GPSport.h"
 #include "Streamers.h"
 #include "fenceCheck.h"
+#include "fence_data.h"
 
 #define DEBUG_PORT Serial
 
@@ -17,6 +19,7 @@
 
 static NMEAGPS gps;
 struct coordinate fence[20];
+uint32_t points;
 struct coordinate pos;
 gps_fix fix;
 
@@ -44,10 +47,21 @@ void setup() {
   gps_port.attachInterrupt( GPSisr );
   gps_port.begin( 9600 );
 
+  // Initialise SD card
+	pinMode(10, OUTPUT);
+	//pinMode(SS, OUTPUT);
+	if(!SD.begin(10)) {
+		DEBUG_PORT.println("Error in SD.begin()");
+		return;
+	}
+
   // Import fence here
   // Set number of points here.
-  
- 
+  auto err = load_fence_from_sd("map", fence, &points);
+  if(err != LOAD_FENCE_FROM_SD_OK) {
+    DEBUG_PORT.print("Fence load error: ");
+    DEBUG_PORT.println(err);
+  }
 }
 
 void doSomeWork() {
@@ -55,8 +69,7 @@ void doSomeWork() {
     pos.longitude = fix.longitudeL();
     int status = insideFence(fence, pos, points);
     // Broadcast status
-    
-    
+
 }
 
 void loop() {
