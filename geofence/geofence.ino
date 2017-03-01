@@ -1,8 +1,6 @@
 #include <NMEAGPS.h>
 #include <NeoSWSerial.h>
-
 #include <SD.h>
-
 // This sets the default ports to listen for the GPS signal to 3 and 4.
 // It also uses NeoSWSerial instead to do software serial.
 #include "GPSport.h"
@@ -12,9 +10,10 @@
 
 #define DEBUG_PORT Serial
 
+//----------------------------------------------------------------
 // Check configuration
 #ifndef NMEAGPS_INTERRUPT_PROCESSING
-#error You must define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
+	#error You must define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
 #endif
 
 static NMEAGPS gps;
@@ -26,7 +25,7 @@ struct coordinate pos;
 gps_fix fix;
 
 //--------------------------
-
+// GPS interrupt handler.
 static void GPSisr( uint8_t c )
 {
 	gps.handle( c );
@@ -68,7 +67,7 @@ void setup() {
   }
 }
 
-void doSomeWork() {
+void checkFence() {
 	pos.latitude = fix.latitudeL();
 	pos.longitude = fix.longitudeL();
 	int status = insideFence(fence, pos, points);
@@ -76,14 +75,14 @@ void doSomeWork() {
 		digitalWrite(applicationModulePort, HIGH);
 	} else {
 		digitalWrite(applicationModulePort, LOW);
-	}		
+	}
 }
 
 void loop() {
 	if (gps.available()) {
 		fix = gps.read();
 		if (fix.valid.location) {
-			doSomeWork(); 
+			checkFence();
 		}
 		// Print all the things!
 		trace_all( DEBUG_PORT, gps, fix );
