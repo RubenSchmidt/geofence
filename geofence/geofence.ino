@@ -72,6 +72,7 @@ void checkFence() {
 	pos.longitude = fix.longitudeL();
 	int status = insideFence(fence, pos, points);
 	if (status == 1 ) {
+		DEBUG_PORT.println( F("Inside!!") );
 		digitalWrite(applicationModulePort, HIGH);
 	} else {
 		digitalWrite(applicationModulePort, LOW);
