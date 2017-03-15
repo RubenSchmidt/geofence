@@ -7,6 +7,7 @@
 #include "Streamers.h"
 #include "fenceCheck.h"
 #include "fence_data.h"
+#include "distanceToFence.h"
 
 #define DEBUG_PORT Serial
 
@@ -20,6 +21,7 @@ static NMEAGPS gps;
 const int applicationModulePort = 8;
 
 struct coordinate fence[20];
+struct coordinate testFence[10];
 uint32_t points;
 struct coordinate pos;
 gps_fix fix;
@@ -49,6 +51,23 @@ void setup() {
 	// Start the UART for the GPS device
 	gps_port.attachInterrupt( GPSisr );
 	gps_port.begin( 9600 );
+
+
+	//Number of fence points
+	points = 4;
+	//Square around Trondheim
+	testFence[0].latitude = 634191872;
+	testFence[0].longitude = 104026794;
+	testFence[1].latitude = 634191872;
+	testFence[1].longitude = 104473110;
+	testFence[2].latitude = 634311673;
+	testFence[2].longitude = 104473110;
+	testFence[3].latitude = 634311670;
+	testFence[3].longitude = 104026794;
+	pos.latitude = 634245635;
+	pos.longitude = 104387283;
+	double distance = shortestDistanceToAllPoints(testFence, pos, points);
+	Serial.println(distance);
 
   // Initialise SD card
 	pinMode(10, OUTPUT);

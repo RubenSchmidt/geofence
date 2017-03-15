@@ -1,25 +1,50 @@
+#include <Arduino.h>
+#include <stdint.h>
+#include <limits.h>
+
+#include "fenceCheck.h"
+#include "distanceToFence.h"
+
+const float pi = 3.14159265358979323846;
+const float earthRadiusKm = 6371.0;
 
 
-
-int distanceToFence(struct coordinate *points, struct coordinate position, int numbOfPoints)
-{
-	double a, b, c;
-  int distance = 0;
-
-  for (size_t i = 0; i < numbOfPoints; i++) {
-      getLine(points[i].latitude, points[i].longitude, points[i+1].latitude, points[i+1].longitude, a, b, c);
-      int dist = abs(a * position.latitude + b * position.longitude + c) / sqrt(a * a + b * b);
-  }
-
-
-	getLine(points[0].latitude, points[0].longitude, points[1].latitude, points[1].longitude, a, b, c);
-	return
+// This function converts decimal degrees to radians
+double deg2rad(double deg) {
+  return (deg * pi / 180);
 }
 
-void getLine(struct coordinate pos1, struct coordinate pos2, &a, &b, &c)
+//  This function converts radians to decimal degrees
+double rad2deg(double rad) {
+  return (rad * 180 / pi);
+}
+
+/**
+ * Returns the distance between two points on the Earth.
+ * Direct translation from http://en.wikipedia.org/wiki/Haversine_formula
+ * @param point1 Coordinate struct for the first point
+ * @param point2 Coordinate struct for the second point
+ * @return The distance between the two points in kilometers
+ */
+double distanceEarth(coordinate point1, coordinate point2) {
+  double lat1r, lon1r, lat2r, lon2r, u, v;
+  lat1r = deg2rad(point1.latitude/10000000.0);
+  lon1r = deg2rad(point1.longitude/10000000.0);
+  lat2r = deg2rad(point2.latitude/10000000.0);
+  lon2r = deg2rad(point2.longitude/10000000.0);
+  u = sin((lat2r - lat1r)/2);
+  v = sin((lon2r - lon1r)/2);
+  return 2.0 * earthRadiusKm * asin(sqrt(u * u + cos(lat1r) * cos(lat2r) * v * v))*1000;
+}
+
+double shortestDistanceToAllPoints(coordinate *points, coordinate position, int numbOfPoints)
 {
-	 // (x- p1X) / (p2X - p1X) = (y - p1Y) / (p2Y - p1Y)
-	 a = pos2.longitude - pos1.longitude;
-	 b = pos2.latitude - pos1.latitude;
-	 c = pos1.latitude * pos2.longitude - pos2.latitude * pos1.longitude;
+	double distance = INT_MAX;
+	for (int i = 0; i < numbOfPoints-1; i++) {
+      double dist = distanceEarth(position, points[i]);
+			if (dist < distance) {
+				distance = dist;
+			}
+  }
+	return distance;
 }

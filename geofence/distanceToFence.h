@@ -1,5 +1,6 @@
 #include <stdint.h>
+#ifndef FENCE_DATA_H
+#define FENCE_DATA_H
+#endif
 
-int distanceToFence(struct coordinate *points, struct coordinate position, int nrOfPoints);
-
-void getLine(struct coordinate pos1, struct coordinate pos2, &a, &b, &c);
+double shortestDistanceToAllPoints(coordinate *points, coordinate position, int numbOfPoints);
