@@ -124,7 +124,7 @@
 //   to attachInterrupt, this must be defined.
 // Otherwise, it must be commented out.
 
-#define NMEAGPS_INTERRUPT_PROCESSING
+//#define NMEAGPS_INTERRUPT_PROCESSING
 
 #ifdef  NMEAGPS_INTERRUPT_PROCESSING
   #define NMEAGPS_PROCESSING_STYLE NMEAGPS::PS_INTERRUPT

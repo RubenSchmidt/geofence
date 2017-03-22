@@ -1,7 +1,7 @@
 #include <NMEAGPS.h>
 #include <NeoSWSerial.h>
 #include <SD.h>
-// This sets the default ports to listen for the GPS signal to 3 and 4.
+// This sets the default ports to listen for the GPS signal to TX3 and RX4.
 // It also uses NeoSWSerial instead to do software serial.
 #include "GPSport.h"
 #include "Streamers.h"
@@ -20,8 +20,9 @@
 static NMEAGPS gps;
 const int applicationModulePort = 8;
 
+NeoSWSerial applicationSerial(7, 6);
+
 struct coordinate fence[20];
-struct coordinate testFence[10];
 uint32_t points;
 struct coordinate pos;
 gps_fix fix;
@@ -47,27 +48,13 @@ void setup() {
 	trace_header( DEBUG_PORT );
 	DEBUG_PORT.flush();
 
-	pinMode(applicationModulePort, OUTPUT);
+	// Start the application module software serial
+	applicationSerial.begin( 9600 );
+
+
 	// Start the UART for the GPS device
 	gps_port.attachInterrupt( GPSisr );
 	gps_port.begin( 9600 );
-
-
-	//Number of fence points
-	points = 4;
-	//Square around Trondheim
-	testFence[0].latitude = 634191872;
-	testFence[0].longitude = 104026794;
-	testFence[1].latitude = 634191872;
-	testFence[1].longitude = 104473110;
-	testFence[2].latitude = 634311673;
-	testFence[2].longitude = 104473110;
-	testFence[3].latitude = 634311670;
-	testFence[3].longitude = 104026794;
-	pos.latitude = 634245635;
-	pos.longitude = 104387283;
-	double distance = shortestDistanceToAllPoints(testFence, pos, points);
-	Serial.println(distance);
 
   // Initialise SD card
 	pinMode(10, OUTPUT);
@@ -84,25 +71,50 @@ void setup() {
     DEBUG_PORT.print("Fence load error: ");
     DEBUG_PORT.println(err);
   }
+	DEBUG_PORT.print("Number of points in fence: ");
+	DEBUG_PORT.println(points);
+	applicationSerial.listen();
+	for(int i = 0; i < points; i++) {
+		DEBUG_PORT.print(fence[i].latitude);
+		DEBUG_PORT.print(":");
+		DEBUG_PORT.println(fence[i].longitude);
+	}
+	gps_port.listen();
 }
 
 void checkFence() {
 	pos.latitude = fix.latitudeL();
 	pos.longitude = fix.longitudeL();
 	int status = insideFence(fence, pos, points);
+	applicationSerial.listen();
+	applicationSerial.print(fix.latitudeL());
+	applicationSerial.print(":");
+	applicationSerial.print(fix.longitudeL());
+	applicationSerial.print("@");
 	if (status == 1 ) {
-		DEBUG_PORT.println( F("Inside!!") );
-		digitalWrite(applicationModulePort, HIGH);
+		applicationSerial.print("1");
 	} else {
-		digitalWrite(applicationModulePort, LOW);
+		applicationSerial.print("0");
 	}
+	applicationSerial.print("&");
+	gps_port.listen();
 }
 
 void loop() {
+
 	if (gps.available()) {
 		fix = gps.read();
 		if (fix.valid.location) {
 			checkFence();
+		}else {
+			applicationSerial.listen();
+			applicationSerial.print("NA");
+			applicationSerial.print(":");
+			applicationSerial.print("NA");
+			applicationSerial.print("@");
+			applicationSerial.print("-");
+			applicationSerial.print("&");
+			gps_port.listen();
 		}
 		// Print all the things!
 		trace_all( DEBUG_PORT, gps, fix );
