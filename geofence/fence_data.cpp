@@ -18,9 +18,9 @@ load_fence_from_sd_error load_fence_from_sd(const char *filename, coordinate *bu
 
 	for(int i = 0; i < *points; i++) {
 		if(!map.available()) return LOAD_FENCE_FROM_SD_FILE_TRUNC;
-		map.read(&buf[i].longitude, sizeof(int32_t));
-		if(!map.available()) return LOAD_FENCE_FROM_SD_FILE_TRUNC;
 		map.read(&buf[i].latitude, sizeof(int32_t));
+		if(!map.available()) return LOAD_FENCE_FROM_SD_FILE_TRUNC;
+		map.read(&buf[i].longitude, sizeof(int32_t));
 	}
 
 	return LOAD_FENCE_FROM_SD_OK;
